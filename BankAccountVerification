@@ -1,0 +1,406 @@
+//Name: Hetong Shen
+//ID: 260953511
+
+#include <stdio.h>
+#include<math.h>
+#include <string.h>
+#include <stdlib.h>
+#include<ctype.h>
+
+void errorMsg(char *msg, char *filename){
+        if (strcmp(msg,"error1")==0){
+	        puts("Wrong number of arguments");
+	}
+	else if (strcmp(msg,"error2")==0){
+		printf("Unable to open filename %s\n", filename);
+	}
+	else if  (strcmp(msg,"error3")==0){
+		printf("Unable to open filename %s\n", filename);
+	}
+	else if  (strcmp(msg,"error4")==0){
+	        puts("File state.csv is empty. Unable to validate transaction.csv.");
+	}
+	puts("Program syntax: ./tv STATE TRANSACTIONS");
+	puts("Legal usage examples: ./tv state.csv transaction.csv");
+	puts("Legal usage examples: ./tv ../state.csv /data/log/transaction.csv");
+
+}
+struct NODE {
+	int accountNumber;
+       	double startingBalance;
+       	double endingBalance;
+	double oristartingBalance;
+     	struct NODE *next;
+};
+
+struct NODE* addNodes(struct NODE *ptr,int inputaccountNumber,double inputstartingBalance,double inputendingBalance,double oristarting) {
+	struct NODE *temp = (struct NODE *) malloc(sizeof(struct NODE));
+	if (temp == NULL){
+	       	return NULL;
+	}
+	temp->accountNumber = inputaccountNumber;
+	temp->startingBalance = inputstartingBalance;
+	temp->endingBalance = inputendingBalance;
+	temp->oristartingBalance=oristarting;
+	if (ptr == NULL){
+		temp->next = NULL; 
+	}
+	
+	else{
+	       	temp->next = ptr; 
+	}
+	
+	return temp; 
+}
+
+void printNodes(struct NODE *ptr) { 
+	while (ptr != NULL) { 
+		printf("%d %f %f\n", ptr->accountNumber, ptr->startingBalance, ptr->endingBalance);
+		ptr = ptr->next; 
+	}
+}
+
+char* getfield(char* line, int num){
+	char* tok;
+	for (tok = strtok(line, ",");
+		tok && *tok;
+		tok = strtok(NULL, ",\n"))
+	{
+
+	if (!--num)return tok;
+	}
+	return NULL;
+}
+int getEmptyLines(char *fileName){
+	char line[1326];
+	int emptyLine = 0;
+	FILE *fp = fopen(fileName, "rt");
+	if (fp == NULL) exit(15);
+	else {
+		while(fgets(line, 1326, fp)) {
+			int i = 0;
+			int len = strlen(line);
+			emptyLine++;
+			for (i = 0; i < len; i++) {
+				if (line[i] != '\n' && line[i] != '\t' && line[i] != ' ') {
+					emptyLine--;
+					break;
+				}
+			}
+		}
+		return emptyLine;
+	}
+}
+
+void swap(int* xp, int* yp)
+{
+	    int temp = *xp;
+	        *xp = *yp;
+		    *yp = temp;
+}
+ 
+void selectionSort(int arr[], int n){
+    	 int i, j, min_idx;
+	 for (i = 0; i < n - 1; i++) {
+		 min_idx = i;
+		 for (j = i + 1; j < n; j++)
+			 if (arr[j] < arr[min_idx])
+				 min_idx = j;
+
+		 swap(&arr[min_idx], &arr[i]);
+
+	 }
+}
+
+void printArray(int arr[], int size){ 
+	int i;
+	for (i = 0; i < size; i++)
+		printf("%d ", arr[i]);
+	printf("\n");
+}
+
+int remove_duplicate(int arr[], int n){
+      	if (n == 0 || n == 1){
+		return n;
+	}
+      	int temp[n];
+      	int j = 0;
+       	int i;
+      	
+	for (i = 0; i < n - 1; i++){
+    		if (arr[i] != arr[i + 1]){
+			temp[j++] = arr[i];
+		}
+	}
+
+      	temp[j++] = arr[n - 1];
+      	for (i = 0; i < j; i++){
+	    arr[i] = temp[i];
+	}
+
+      	return j;
+}  
+
+void sortFile (FILE *source, FILE *destination, char *word) {
+	char array[1000];
+	while(!feof(source)) {
+		fgets(array,1000,source); 
+		if (feof(source)){
+  			break;}
+		else{
+			if (!strstr(array, word) == 0) 
+				fputs(array, destination);
+		}
+	}
+}
+
+struct NODE* deleteDuplicates(struct NODE* head){
+	if(head){
+		struct NODE *current=head,*releasenode;
+		while(current->next){
+			if(current->accountNumber==current->next->accountNumber){
+				printf("Duplicate account number [account, start, end]: %d %f %f\n", current->next->accountNumber, current->next->startingBalance,current->next->endingBalance);
+				releasenode=current->next;
+				current->next=releasenode->next;
+				free(releasenode);
+			}
+			else{
+				current=current->next;
+			}
+		}
+	}
+	return head;
+}
+
+void reverse(struct NODE** head_ref){
+	struct NODE* prev = NULL;
+	struct NODE* current = *head_ref;
+	struct NODE* next = NULL;
+	while (current != NULL) {
+		next = current->next;
+		current->next = prev;                    
+		prev = current;
+                current = next;
+	}
+	*head_ref = prev;
+}
+
+char* search(struct NODE* head, int aNintrans, char mode, double amount){
+	struct NODE* current = head; 
+ 	while (current != NULL)
+	{
+		if (current->accountNumber == aNintrans){
+			if (mode == 'd') {
+				current->startingBalance  = current->startingBalance + amount;
+			}
+			else if (mode == 'w') {
+				double temp =  current->startingBalance;
+				current->startingBalance  = current->startingBalance - amount;
+				
+				if(current->startingBalance < 0){
+					printf("Balance below zero error (account, mode, transaction, startingBalance before): %d %c %f %f\n",current->accountNumber, mode, amount, temp);
+					current->startingBalance =0;
+				}
+			}
+			return "true";
+		}
+		current = current->next;
+	}
+	printf("Account not found (account, mode, amount):  %d %c %f\n", aNintrans, mode, amount);
+     	return "false";
+}
+
+void finalStats(struct NODE *ptr) { 
+	while (ptr != NULL) {	
+		if (ptr->startingBalance != ptr->endingBalance){
+			printf("End of day balances do not agree (account, starting, ending): %d %f %f\n", ptr->accountNumber, ptr->startingBalance, ptr->endingBalance);
+		}
+		ptr = ptr->next;
+	}
+}
+
+int main(int argc, char *argv[]) {
+        char *msg;
+        if (argc != 3){
+	        char *msg = "error1";
+	        errorMsg(msg," ");
+	        exit(1);
+        }
+
+	FILE *state = fopen(argv[1], "rt");
+	if (state == NULL) {
+                char *msg = "error2";
+                errorMsg(msg,argv[1]);
+		exit(2); 
+	}
+
+	FILE *trans = fopen(argv[2], "rt");
+	if (trans == NULL) {
+		char *msg = "error3";					                  
+		errorMsg(msg,argv[2]);				
+		exit(2);
+	}
+
+	fseek (state, 0, SEEK_END);
+	int statesize = ftell(state);
+        fseek (trans, 0, SEEK_END);
+        int transsize = ftell(trans);
+	if (statesize == 0 && transsize != 0) {
+        	char *msg = "error4";
+	        errorMsg(msg,argv[1]);
+                exit(3);
+	}
+	
+	fclose(state);
+	fclose(trans);
+
+        FILE *state2 = fopen(argv[1], "rt");
+	FILE *trans2 = fopen(argv[2], "rt");
+	
+	int countlinestate=0; char c;
+        for (c = getc(state2); c != EOF; c = getc(state2)){
+		if (c == '\n'){
+			countlinestate = countlinestate + 1;
+		}
+	}
+	int emptyLines = getEmptyLines(argv[1]);
+	countlinestate = countlinestate - emptyLines - 1;
+//	printf("The file  has %d lines\n ", countlinestate);
+        fclose(state2);
+        fclose(trans2);
+
+
+        FILE *state3 = fopen(argv[1], "rt");
+        FILE *trans3 = fopen(argv[2], "rt");
+	char garbage[1326]; fgets(garbage, 1326, state3);
+	char line[1326]; int arrayofaccount[countlinestate]; int d=0;
+	while (fgets(line, 1326, state3)){                                                                              
+		char* tmp = strdup(line); 
+		char* accbeforesort=getfield(tmp, 1);
+		arrayofaccount[d]= atoi(accbeforesort);
+		d++;
+		free(tmp);
+	}
+
+//	int loop;
+// 	for(loop = 0; loop < countlinestate; loop++)
+//	         printf("%d ", arrayofaccount[loop]);
+
+	selectionSort(arrayofaccount, countlinestate);
+//    	printf("\nSorted array in Ascending order: \n");
+//      printArray(arrayofaccount, countlinestate);
+	
+	int afterremove = remove_duplicate(arrayofaccount, countlinestate);
+//	printArray(arrayofaccount, afterremove);
+        fclose(state3);
+        fclose(trans3);
+
+//	FILE *state4 = fopen(argv[1], "rt");
+//	FILE *trans4 = fopen(argv[2], "rt");
+//	FILE *temp = fopen("temp.csv", "at");
+	int f;
+	for(f=0; f<afterremove; f++){
+	        FILE *state4 = fopen(argv[1], "rt");
+	        FILE *trans4 = fopen(argv[2], "rt");
+	        FILE *temp = fopen("temp.csv", "at");
+		
+		char cast[26];
+		sprintf(cast, "%d",arrayofaccount[f]);
+//		printf("%s\n",cast);
+	 	sortFile(state4, temp, cast);
+        	
+		fclose(state4);
+        	fclose(trans4);	
+		fclose(temp);
+	}
+
+	struct NODE * head = NULL;
+	FILE *temp2 = fopen("temp.csv", "rt");
+	int x, accountNumber;
+        double inputstartingBalance, inputendingBalance,oristarting;
+        for(x=0; x<countlinestate; x++){
+		char gline[1326]; 
+		const char* accountNumberinstring;
+		const char* startingBalanceinstring;
+		const char* endingBalanceinstring;
+//		while (fgets(gline, 1326, temp2)){
+			fgets(gline, 1326, temp2);
+		      	char* tmp2 = strdup(gline);
+			char* tmp3 = strdup(gline);
+			char* tmp4 = strdup(gline);
+			accountNumberinstring = getfield(tmp2, 1);
+			startingBalanceinstring = getfield(tmp3, 2);
+			endingBalanceinstring = getfield(tmp4, 3);
+//			accountNumber =  atoi(accountNumberinstring);
+// 			printf("%s\n", startingBalanceinstring);
+// 			free(tmp2);
+//		}
+		accountNumber =atoi(accountNumberinstring);
+		inputstartingBalance= atof(startingBalanceinstring);
+		inputendingBalance= atof(endingBalanceinstring );
+		oristarting=inputstartingBalance;
+//		printf("%d\n", accountNumber);
+//		accountNumber=getc(stdin);
+		free(tmp2);
+		free(tmp3);
+		free(tmp4);
+		head = addNodes(head, accountNumber, inputstartingBalance, inputendingBalance,oristarting); 
+	}
+	fclose(temp2);
+	reverse(&head);
+	deleteDuplicates(head);
+        remove("temp.csv");
+//	printNodes(head);
+
+        struct NODE * headptr = head;
+
+	FILE *processtrans = fopen(argv[2], "rt");
+	int countlinetrans=0; char g;
+	for (g = getc(processtrans); g != EOF; g = getc(processtrans)){
+		if (g == '\n'){
+			countlinetrans = countlinetrans + 1;
+		}
+	}
+	int emptyLinesintrans = getEmptyLines(argv[2]);
+	countlinetrans = countlinetrans- emptyLinesintrans - 1;
+//	printf("The file  has %d lines\n ", countlinetrans);
+	fclose(processtrans);
+	
+        FILE *processtrans2 = fopen(argv[2], "rt");
+        char garbage2[1326]; fgets(garbage2, 1326, processtrans2);
+	int y, accountNumberintrans;
+	double absoluteValueAmount;
+	char mode;
+	for(y=0; y<countlinetrans; y++){
+		char getlin[1326];
+		const char* aNintransinstring;
+		const char* modeinstring;
+		const char* aVinstring;
+		fgets(getlin, 1326, processtrans2);
+		char* tmp5 = strdup(getlin);
+		char* tmp6 = strdup(getlin);
+		char* tmp7 = strdup(getlin);
+		aNintransinstring = getfield(tmp5, 1);
+		modeinstring = getfield(tmp6, 2);
+		aVinstring = getfield(tmp7, 3);
+		
+		accountNumberintrans = atoi(aNintransinstring);
+     		mode = modeinstring[0];
+		absoluteValueAmount =  atof( aVinstring);
+//		printf("%d\n",accountNumberintrans);
+//	    	printf("%c\n",mode);
+//	    	printf("%f\n",absoluteValueAmount);
+
+  		headptr = head;
+
+		search(headptr,accountNumberintrans, mode, absoluteValueAmount);
+//	        printNodes(head);
+		free(tmp5);
+		free(tmp6);
+		free(tmp7);	
+	}
+	fclose(processtrans2);	
+//	printNodes(head);
+	finalStats(head);
+
+}
